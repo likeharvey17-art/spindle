@@ -61,8 +61,32 @@ private struct Groove: View {
 struct PanelView: View {
     @ObservedObject var nowPlaying: NowPlayingCenter
     @ObservedObject var settings: AppSettings
+    /// Below 1, the whole faceplate shrinks evenly to fit a short screen;
+    /// `naturalHeight` is its height at full size.
+    var scale: CGFloat = 1
+    var naturalHeight: CGFloat? = nil
+
+    private static let width: CGFloat = 404
 
     var body: some View {
+        if scale < 1, let naturalHeight {
+            panel
+                .frame(width: Self.width, height: naturalHeight)
+                .scaleEffect(scale, anchor: .topLeading)
+                .frame(width: Self.width * scale, height: naturalHeight * scale, alignment: .topLeading)
+        } else {
+            panel
+        }
+    }
+
+    /// The panel at full size, or scaled down so it fits in `available` points of height.
+    static func fitting(nowPlaying: NowPlayingCenter, settings: AppSettings, available: CGFloat) -> PanelView {
+        let natural = NSHostingView(rootView: PanelView(nowPlaying: nowPlaying, settings: settings)).fittingSize.height
+        guard natural > available, available > 0 else { return PanelView(nowPlaying: nowPlaying, settings: settings) }
+        return PanelView(nowPlaying: nowPlaying, settings: settings, scale: available / natural, naturalHeight: natural)
+    }
+
+    private var panel: some View {
         HStack(spacing: 0) {
             cheek
             faceplate
@@ -75,8 +99,7 @@ struct PanelView: View {
                 .clipped()
             cheek
         }
-        .frame(width: 404)
-        .frame(maxHeight: (NSScreen.main?.visibleFrame.height ?? 800) - 60)
+        .frame(width: Self.width)
         .fixedSize(horizontal: false, vertical: true)
         .background(Color(red: 0.16, green: 0.10, blue: 0.06))
         .preferredColorScheme(.light)

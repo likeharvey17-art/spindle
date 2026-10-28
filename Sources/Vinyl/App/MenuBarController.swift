@@ -32,7 +32,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
         // A fresh panel every time, sized exactly before showing: a reused one
         // could come back out of step with the popover and show cut off.
-        let host = FirstClickHostingView(rootView: PanelView(nowPlaying: nowPlaying, settings: settings))
+        // Room below the menu bar, less the popover's arrow and a small gap:
+        // on shorter screens the panel shrinks to fit rather than being cut off.
+        let screen = sender.window?.screen ?? NSScreen.main
+        let available = (screen?.visibleFrame.height ?? 800) - 24
+        let host = FirstClickHostingView(rootView: PanelView.fitting(nowPlaying: nowPlaying, settings: settings, available: available))
         // Measure with SwiftUI's own sizing, then lock it so nothing re-sizes mid-show.
         host.layoutSubtreeIfNeeded()
         let size = host.fittingSize

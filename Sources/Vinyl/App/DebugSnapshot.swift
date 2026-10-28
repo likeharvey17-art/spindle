@@ -7,8 +7,11 @@ import QuartzCore
 /// renders a scene offscreen with sample artwork, mid-song, for visual checks.
 enum DebugSnapshot {
     /// `Spindle --panel <out.png>` renders the settings panel.
+    /// `SPINDLE_PANEL_ROOM=<points>` renders it as it fits a screen with that much height.
     static func panel(to path: String) {
-        let host = NSHostingView(rootView: PanelView(nowPlaying: .shared, settings: .shared))
+        let room = ProcessInfo.processInfo.environment["SPINDLE_PANEL_ROOM"].flatMap(Double.init).map { CGFloat($0) }
+            ?? (NSScreen.main?.visibleFrame.height ?? 800) - 24
+        let host = NSHostingView(rootView: PanelView.fitting(nowPlaying: .shared, settings: .shared, available: room))
         host.frame.size = host.fittingSize
         let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.contentView = host
@@ -73,7 +76,8 @@ enum DebugSnapshot {
         }
         let original = (s.scene, s.framing, s.player, s.desktopArtwork, s.hideOnPause, s.hideDesktopClutter, s.includeOtherApps, s.launchAtLogin)
         let extras = (s.cardEnabled, s.cardSize, s.cardStyle)
-        let host = NSHostingView(rootView: PanelView(nowPlaying: .shared, settings: s))
+        let room = ProcessInfo.processInfo.environment["SPINDLE_PANEL_ROOM"].flatMap(Double.init).map { CGFloat($0) } ?? .greatestFiniteMagnitude
+        let host = NSHostingView(rootView: PanelView.fitting(nowPlaying: .shared, settings: s, available: room))
         host.frame.size = host.fittingSize
         let window = NSWindow(contentRect: NSRect(x: 40, y: 40, width: host.frame.width, height: host.frame.height),
                               styleMask: .borderless, backing: .buffered, defer: false)
