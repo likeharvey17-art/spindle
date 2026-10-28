@@ -20,6 +20,8 @@ final class NowPlayingCenter: ObservableObject {
     @Published private(set) var artwork: NSImage?
     @Published private(set) var isPlaying = false
     @Published private(set) var playerBundleID: String?
+    /// A player macOS won't let Spindle read (Automation permission missing).
+    @Published private(set) var blockedPlayer: KnownPlayer?
 
     private var elapsed: Double?
     private var elapsedAt = Date()
@@ -40,6 +42,11 @@ final class NowPlayingCenter: ObservableObject {
     // MARK: Lifecycle
 
     func start() {
+        ScriptRunner.shared.onPermission = { [weak self] player, allowed in
+            guard let self else { return }
+            if !allowed, self.blockedPlayer != player { self.blockedPlayer = player }
+            if allowed, self.blockedPlayer == player { self.blockedPlayer = nil }
+        }
         monitor.onSnapshot = { [weak self] snapshot in self?.systemUpdate(snapshot) }
         monitor.start()
 
@@ -172,6 +179,7 @@ final class NowPlayingCenter: ObservableObject {
         if incoming.key != track?.key {
             track = incoming
             artwork = resolver.cached(incoming.artworkKey)
+            Trace.log("track: \(incoming.title) / \(incoming.album) from \(s.bundleID ?? "?"), cached art \(artwork != nil)")
             requestArtwork(for: s, track: incoming)
         } else {
             if incoming.duration != nil, incoming.duration != track?.duration { track = incoming }
@@ -190,10 +198,24 @@ final class NowPlayingCenter: ObservableObject {
         if isPlaying != s.isPlaying { isPlaying = s.isPlaying }
     }
 
-    private func requestArtwork(for s: PlaybackSnapshot, track: Track) {
+    /// Looks up the art, trying again a little later if nothing turned up
+    /// (players often have no art yet in the first moment of a new track).
+    private func requestArtwork(for s: PlaybackSnapshot, track: Track, attempt: Int = 0) {
         resolver.resolve(s, key: track.artworkKey) { [weak self] image in
-            guard let self, self.track?.artworkKey == track.artworkKey else { return }
-            self.artwork = image
+            guard let self, self.track?.artworkKey == track.artworkKey else {
+                Trace.log("art: dropped art for \(track.title), now on \(self?.track?.title ?? "nothing")")
+                return
+            }
+            if let image {
+                self.artwork = image
+            } else if attempt < 3 {
+                let wait: Double = [1.5, 4, 10][attempt]
+                Trace.log("art: none for \(track.title) yet, trying again in \(wait)s")
+                DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
+                    guard let self, self.artwork == nil, self.track?.artworkKey == track.artworkKey else { return }
+                    self.requestArtwork(for: s, track: track, attempt: attempt + 1)
+                }
+            }
         }
     }
 

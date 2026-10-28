@@ -13,11 +13,13 @@ Requires macOS 14 or later.
 | ![Golden Hour](docs/listeningRoom.jpg) | ![Lamplight](docs/afterHours.jpg) |
 | Overhead | Midnight |
 | ![Overhead](docs/turntable.jpg) | ![Midnight](docs/overheadNight.jpg) |
+| Terracotta | Dusk |
+| ![Terracotta](docs/terracotta.jpg) | ![Dusk](docs/dusk.jpg) |
 
 ## What it does
 
-Spindle has four scenes: Golden Hour, Lamplight, Overhead and Midnight. They are photoreal
-images, and the album art is relit to match the light in each room. When the track changes,
+Spindle has six scenes: Golden Hour, Lamplight, Overhead, Midnight, Terracotta and Dusk. They
+are photoreal images, and the album art is relit to match the light in each room. When the track changes,
 the old record slides out of the sleeve and the new one slides in.
 
 It reads Spotify, Apple Music and Swinsian directly. Other players, including browsers, come
@@ -71,6 +73,11 @@ If you're comfortable with Terminal, this one command does the same as steps 2 a
 xattr -dr com.apple.quarantine /Applications/Spindle.app
 ```
 
+The first time Spindle reads Spotify, Music or Swinsian, macOS asks whether Spindle may control
+it. Click **Allow**: that's how Spindle gets the exact album art. If you clicked Don't Allow,
+the panel shows a red "Allow Spindle to read…" link that opens the right setting (System
+Settings > Privacy & Security > Automation).
+
 macOS asks for permission the first time Spindle talks to Spotify, Music or Swinsian, and the
 first time the VU meter listens to system audio. The meter only measures loudness and records
 nothing.
@@ -87,9 +94,10 @@ You need the Xcode command line tools with a Swift 6 toolchain.
 
 ## Your own scenes
 
-The four scenes ship inside the app. To replace one, put your own `<name>.png` (or `.jpg`) and
+The six scenes ship inside the app. To replace one, put your own `<name>.png` (or `.jpg`) and
 `<name>.json` in `~/Library/Application Support/Spindle/Scenes/`. Files there win over the
-bundled ones. The names are `listening-room`, `after-hours`, `turntable` and `overhead-night`.
+bundled ones. The names are `listening-room`, `after-hours`, `turntable`, `overhead-night`,
+`terracotta` and `dusk`.
 
 A scene is one photo with a blank white sleeve and a record with a blank white label. The JSON
 gives their positions in image pixels, so the art can be laid on with the photo's own
@@ -114,10 +122,11 @@ width, height) and `corner` (its corner radius).
 
 ## Development
 
-`Spindle --snapshot <turntable|listeningRoom|afterHours|overheadNight> out.png [wide|mid|close]`
+`Spindle --snapshot <listeningRoom|afterHours|turntable|overheadNight|terracotta|dusk> out.png [wide|mid|close]`
 renders a scene offscreen with sample artwork, so you can check visuals without the desktop.
 `Spindle --card <style> <small|medium|large> out.png` renders a widget, and
-`Spindle --panel out.png` renders the settings panel.
+`Spindle --panel out.png` renders the settings panel. Launching with `SPINDLE_TRACE=1` prints how
+each track's artwork is found.
 
 | Path | What's in it |
 | --- | --- |
@@ -127,6 +136,6 @@ renders a scene offscreen with sample artwork, so you can check visuals without 
 | `Sources/Vinyl/Rendering/` | Procedural textures and the app icon |
 | `Sources/Vinyl/App/` | App lifecycle, desktop window, menu bar, settings |
 | `Sources/Vinyl/UI/` | The SwiftUI settings panel and VU meter |
-| `Resources/Scenes/` | The four scene photos and their calibration |
+| `Resources/Scenes/` | The six scene photos and their calibration |
 | `Resources/Widgets/` | The widget photos and their calibration |
 | `Resources/Panel/` | Cut-out parts for the settings panel |

@@ -3,7 +3,7 @@ import Combine
 import ServiceManagement
 
 enum SceneKind: String, CaseIterable, Identifiable {
-    case listeningRoom, afterHours, turntable, overheadNight
+    case listeningRoom, afterHours, turntable, overheadNight, terracotta, dusk
 
     var id: String { rawValue }
 
@@ -13,6 +13,8 @@ enum SceneKind: String, CaseIterable, Identifiable {
         case .afterHours: return "Lamplight"
         case .turntable: return "Overhead"
         case .overheadNight: return "Midnight"
+        case .terracotta: return "Terracotta"
+        case .dusk: return "Dusk"
         }
     }
 }

@@ -9,6 +9,8 @@ extension SceneKind {
         switch self {
         case .turntable: return "turntable"
         case .overheadNight: return "overhead-night"
+        case .terracotta: return "terracotta"
+        case .dusk: return "dusk"
         case .listeningRoom: return "listening-room"
         case .afterHours: return "after-hours"
         }
@@ -172,7 +174,11 @@ final class PhotoScene: VinylScene {
     /// The old record slides out of the jacket's frame as the new one slides in,
     /// and the label changes over.
     func changeRecord(to art: CGImage?) {
-        guard let art, let current = sleeveArt.contents else { setArtwork(art, animated: true); return }
+        guard let art, let current = sleeveArt.contents else {
+            Trace.log("scene: no record on the sleeve yet, fading the art in")
+            setArtwork(art, animated: true)
+            return
+        }
         let side = sleeveArt.bounds.width
         let incoming = resample(art, side: sleeveSide)
         func card(_ contents: Any, at x: CGFloat) -> CALayer {
@@ -192,6 +198,7 @@ final class PhotoScene: VinylScene {
 
         CATransaction.begin()
         CATransaction.setCompletionBlock { [weak self] in
+            Trace.log("scene: sleeve slide finished")
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             self?.sleeveArt.contents = incoming

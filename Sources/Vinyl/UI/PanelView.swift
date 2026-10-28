@@ -253,11 +253,27 @@ private struct Meter: View {
                             .font(Lettering.name(14))
                             .foregroundStyle(Faceplate.meterInk)
                             .lineLimit(2)
-                        Text((nowPlaying.track?.artist ?? "Play something on your Mac").uppercased())
-                            .font(Lettering.label(11))
-                            .kerning(1)
-                            .foregroundStyle(Faceplate.meterInk.opacity(0.72))
-                            .lineLimit(2)
+                        if let blocked = nowPlaying.blockedPlayer {
+                            // Without Automation permission there's no album art from this player.
+                            Button {
+                                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!)
+                            } label: {
+                                Text("Allow Spindle to read \(blocked.name) ›".uppercased())
+                                    .font(Lettering.label(11))
+                                    .kerning(1)
+                                    .foregroundStyle(Color(red: 0.62, green: 0.14, blue: 0.06))
+                                    .lineLimit(2)
+                            }
+                            .buttonStyle(.plain)
+                            .pointingCursor()
+                            .help("Open Privacy & Security > Automation and turn on \(blocked.name) under Spindle")
+                        } else {
+                            Text((nowPlaying.track?.artist ?? "Play something on your Mac").uppercased())
+                                .font(Lettering.label(11))
+                                .kerning(1)
+                                .foregroundStyle(Faceplate.meterInk.opacity(0.72))
+                                .lineLimit(2)
+                        }
                     }
                     Spacer(minLength: 0)
                 }
@@ -554,7 +570,7 @@ private struct SceneSelector: View {
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
             RotaryKnob(title: "Scene", options: SceneKind.allCases.map { ($0, $0.title) }, selection: $selection,
-                       knobSize: 92, spread: 150, labelSize: 10.5, extraWidth: 12)
+                       knobSize: 92, spread: 236, labelSize: 10.5, extraWidth: 12)
             VStack(spacing: 8) {
                 Image(nsImage: SceneThumbnails.image(for: selection))
                     .resizable()
@@ -644,8 +660,8 @@ enum SceneThumbnails {
                 let R = DeckGeometry.recordRadius
                 let c = CGPoint(x: deck.minX + DeckGeometry.center.x, y: deck.minY + DeckGeometry.center.y)
                 Draw.upright(Textures.record(scale: scale), in: CGRect(x: c.x - R, y: c.y - R, width: R * 2, height: R * 2), ctx)
-            case .listeningRoom, .afterHours:
-                Draw.upright(Textures.room(kind == .afterHours ? .night : .day, size: worldSize, scale: scale), in: CGRect(origin: .zero, size: worldSize), ctx)
+            case .listeningRoom, .afterHours, .terracotta, .dusk:
+                Draw.upright(Textures.room(kind == .afterHours || kind == .dusk ? .night : .day, size: worldSize, scale: scale), in: CGRect(origin: .zero, size: worldSize), ctx)
             }
         }
         return NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))

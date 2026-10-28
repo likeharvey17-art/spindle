@@ -35,6 +35,7 @@ final class DesktopController {
     private var lastTrackKey: String?
     /// The track whose art is on the record now, so a new one plays the flip.
     private var shownArtKey: String?
+    private var pendingClear: DispatchWorkItem?
     private var visible = true
 
     /// Every scene on screen: one per display, plus the card.
@@ -81,10 +82,24 @@ final class DesktopController {
                 // Fade only when the record actually changes, not on the first draw.
                 let animated = self.lastTrackKey != nil
                 self.lastTrackKey = key
+                self.pendingClear?.cancel()
+                self.pendingClear = nil
+                // A new track whose art is still on its way keeps the last record
+                // on for a moment, so the sleeve doesn't flash blank between songs.
+                if image == nil, key != nil, self.shownArtKey != nil {
+                    let clear = DispatchWorkItem { [weak self] in
+                        Trace.log("scene: no art arrived, clearing")
+                        self?.sceneViews.forEach { $0.setArtwork(nil, animated: true) }
+                    }
+                    self.pendingClear = clear
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 6, execute: clear)
+                    return
+                }
                 // A new track's art arriving swaps the record over.
                 let flip = image != nil && self.shownArtKey != nil && key != self.shownArtKey
                 if image != nil { self.shownArtKey = key }
                 let cg = image?.cg
+                Trace.log("scene: art \(cg == nil ? "cleared" : "set") for \(self.nowPlaying.track?.title ?? "nothing"), flip \(flip)")
                 self.sceneViews.forEach { $0.setArtwork(cg, animated: animated, flip: flip) }
             }
             .store(in: &cancellables)

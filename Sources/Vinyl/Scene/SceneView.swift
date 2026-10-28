@@ -116,8 +116,8 @@ final class SceneView: NSView {
             } else {
                 switch kind {
                 case .turntable, .overheadNight: next = TopDownScene(scale: objectScale, backgroundScale: backgroundScale)
-                case .listeningRoom: next = FrontScene(night: false, scale: objectScale, backgroundScale: backgroundScale)
-                case .afterHours: next = FrontScene(night: true, scale: objectScale, backgroundScale: backgroundScale)
+                case .listeningRoom, .terracotta: next = FrontScene(night: false, scale: objectScale, backgroundScale: backgroundScale)
+                case .afterHours, .dusk: next = FrontScene(night: true, scale: objectScale, backgroundScale: backgroundScale)
                 }
             }
         case .card(.mono, _):

@@ -1,6 +1,17 @@
 import AppKit
 
 /// One reading of "what is playing right now", from any source.
+/// `SPINDLE_TRACE=1` prints how each track's artwork is found, for debugging.
+enum Trace {
+    static let on = ProcessInfo.processInfo.environment["SPINDLE_TRACE"] != nil
+    private static let clock: DateFormatter = { let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"; return f }()
+    static func log(_ message: @autoclosure () -> String) {
+        guard on else { return }
+        print("\(clock.string(from: Date())) \(message())")
+        fflush(stdout)
+    }
+}
+
 struct PlaybackSnapshot {
     var bundleID: String?
     var title: String
@@ -103,6 +114,8 @@ final class ScriptRunner {
 
     private let queue = DispatchQueue(label: "vinyl.applescript", qos: .userInitiated)
     private var compiled: [String: NSAppleScript] = [:]
+    /// Reports, after each script, whether macOS let Spindle talk to that player.
+    var onPermission: ((KnownPlayer, Bool) -> Void)?
 
     func run(_ source: String, completion: @escaping (NSAppleEventDescriptor?) -> Void) {
         queue.async {
@@ -118,6 +131,12 @@ final class ScriptRunner {
             }
             var error: NSDictionary?
             let result = script.executeAndReturnError(&error)
+            if let error { Trace.log("applescript error \(error[NSAppleScript.errorNumber] ?? "?"): \(source.prefix(70))") }
+            // -1743: the user hasn't allowed Spindle to control this app (Privacy & Security > Automation).
+            let denied = (error?[NSAppleScript.errorNumber] as? Int) == -1743
+            if let player = KnownPlayer.allCases.first(where: { source.contains("\"\($0.bundleID)\"") }) {
+                DispatchQueue.main.async { self.onPermission?(player, !denied) }
+            }
             DispatchQueue.main.async { completion(error == nil ? result : nil) }
         }
     }
