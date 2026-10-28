@@ -53,11 +53,23 @@ fits any wallpaper. Its label shows the album art in grayscale.
 
 ## Install
 
-Download the DMG above, open it and drag Spindle to Applications.
+1. Download the DMG above, open it and drag **Spindle** to **Applications**.
+2. Open Spindle from Applications. macOS will say it can't verify the app and offer **Move to
+   Bin**. Click **Done** instead.
+3. Open **System Settings > Privacy & Security** and scroll down to the Security section. Next
+   to the message about Spindle, click **Open Anyway**, then confirm with your password or
+   Touch ID.
+4. Open Spindle again and click **Open**. A record icon appears in the menu bar.
 
-The app is ad-hoc signed but not notarized, so macOS blocks it the first time. Open System
-Settings > Privacy & Security, scroll down and choose Open Anyway. You only need to do this
-once.
+You only need to do this once. macOS asks because Spindle isn't notarized: notarization needs a
+paid Apple Developer membership, which this project doesn't have. The app is the same code you
+can read and build here.
+
+If you're comfortable with Terminal, this one command does the same as steps 2 and 3:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Spindle.app
+```
 
 macOS asks for permission the first time Spindle talks to Spotify, Music or Swinsian, and the
 first time the VU meter listens to system audio. The meter only measures loudness and records
